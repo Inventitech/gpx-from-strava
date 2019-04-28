@@ -3,11 +3,22 @@ require "yaml"
 require "nokogiri"
 
 ACCESS_TOKEN = File.read("access_token.txt").strip
-activities = JSON.parse(`curl -G https://www.strava.com/api/v3/activities -d access_token=#{ACCESS_TOKEN}`)
+
+page = 1
+activities = []
+loop do
+  temp_activities = JSON.parse(`curl -G https://www.strava.com/api/v3/activities -d page=#{page} -d access_token=#{ACCESS_TOKEN}`)
+  break if temp_activities.length == 0
+  
+  page = page + 1
+  activities = activities + temp_activities
+end
+
+puts "Total Strava activites: #{activities.length}"
 
 for activity in activities do
-  filename = "#{File.basename(activity["external_id"], ".*")}_#{activity["start_date"]}.gpx"
-  raise "file #{filename} exists allready" if File.exists?(filename)
+  filename = "#{activity["type"]}_#{File.basename(activity["external_id"], ".*")}_#{activity["start_date"]}.gpx"
+  raise "file #{filename} exists already" if File.exists?(filename)
 
   stream = JSON.parse(`curl -G https://www.strava.com/api/v3/activities/#{activity["id"]}/streams/latlng,altitude,time -d access_token=#{ACCESS_TOKEN}`)
 
