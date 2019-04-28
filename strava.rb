@@ -17,9 +17,11 @@ end
 puts "Total Strava activites: #{activities.length}"
 
 for activity in activities do
-  filename = "#{activity["type"]}_#{File.basename(activity["external_id"], ".*")}_#{activity["start_date"]}.gpx"
-  raise "file #{filename} exists already" if File.exists?(filename)
-
+  next if activity["external_id"].nil?
+  
+  filename = "download/#{activity["type"]}_#{File.basename(activity["external_id"], ".*")}_#{activity["start_date"]}.gpx"
+  next if File.exists?(filename)
+    
   stream = JSON.parse(`curl -G https://www.strava.com/api/v3/activities/#{activity["id"]}/streams/latlng,altitude,time -d access_token=#{ACCESS_TOKEN}`)
 
   latlng   = stream.map{ |entry| entry["data"] if entry["type"] == "latlng" }.compact.flatten(1).each_with_index.map{ |value, index| [index, value] }.collect{|index, a| {:index => index, :lat => a[0], :lng => a[1]}}
